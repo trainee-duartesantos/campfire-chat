@@ -16,9 +16,9 @@ class Message extends Model
     /**
      * Autor da mensagem
      */
-    public function user(): BelongsTo
+    public function messages()
     {
-        return $this->belongsTo(User::class);
+        return $this->morphMany(Message::class, 'messageable')->latest();
     }
 
     /**
