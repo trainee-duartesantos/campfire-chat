@@ -9,6 +9,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class User extends Authenticatable
 {
@@ -64,4 +67,31 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // Um utilizador pode pertencer a várias salas
+    public function rooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Room::class)
+                    ->withTimestamps();
+    }
+
+    // Um utilizador envia mensagens
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    // Um utilizador recebe mensagens
+    public function directMessages(): MorphMany
+    {
+        return $this->morphMany(Message::class, 'messageable')
+                    ->latest();
+    }
+
+    // Permissões
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
 }
