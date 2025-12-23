@@ -28,6 +28,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/messages/{user}', [DirectMessageController::class, 'store'])
         ->name('messages.direct.store');
+
+    Route::post('/rooms/{room}/members', [RoomController::class, 'addMember'])
+        ->name('rooms.members.add');
+
+    Route::delete('/rooms/{room}/members/{user}', [RoomController::class, 'removeMember'])
+        ->name('rooms.members.remove');
+
+    Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])
+        ->name('rooms.destroy');
 });
 
 Route::post('/rooms/{room}/messages', [MessageController::class, 'store'])

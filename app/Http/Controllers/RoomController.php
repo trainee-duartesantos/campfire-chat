@@ -12,13 +12,15 @@ class RoomController extends Controller
 {
    public function index()
     {
-        $rooms = Auth::user()
-            ->rooms()
-            ->latest()
-            ->get();
+        if (auth()->user()->isAdmin()) {
+            $rooms = Room::latest()->get();
+        } else {
+            $rooms = auth()->user()->rooms()->latest()->get();
+        }
 
         return view('rooms.index', compact('rooms'));
     }
+
 
     public function create()
     {
@@ -52,7 +54,9 @@ class RoomController extends Controller
             403
         );
 
-        return view('rooms.show', compact('room'));
+        $users = User::where('id', '!=', auth()->id())->get();
+
+        return view('rooms.show', compact('room', 'users'));
     }
 
     public function invite(Request $request, Room $room)
@@ -70,5 +74,43 @@ class RoomController extends Controller
 
         return back()->with('success', 'Utilizador adicionado à sala.');
     }
+    
+
+    public function addMember(Request $request, Room $room)
+    {
+        $this->authorize('manage', $room);
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $room->users()->syncWithoutDetaching($request->user_id);
+
+        return back()->with('success', 'Utilizador adicionado à sala.');
+    }
+
+    public function removeMember(Room $room, User $user)
+    {
+        $this->authorize('manage', $room);
+
+        if ($room->created_by === $user->id) {
+            return back()->withErrors('Não podes remover o criador da sala.');
+        }
+
+        $room->users()->detach($user->id);
+
+        return back()->with('success', 'Utilizador removido da sala.');
+    }
+
+    public function destroy(Room $room)
+    {
+        $this->authorize('manage', $room);
+
+        $room->delete();
+
+        return redirect()->route('rooms.index')
+            ->with('success', 'Sala removida.');
+    }
+
 
 }

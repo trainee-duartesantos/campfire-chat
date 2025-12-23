@@ -21,6 +21,12 @@ class Room extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function isAdmin(User $user): bool
+    {
+        return $this->created_by === $user->id || $user->isAdmin();
+    }
+
+
     //Utilizadores pertencentes à sala
     public function users(): BelongsToMany
     {

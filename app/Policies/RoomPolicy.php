@@ -64,10 +64,22 @@ class RoomPolicy
         return false;
     }
 
+    public function manage(User $user, Room $room): bool
+    {
+        return $user->isAdmin() || $room->created_by === $user->id;
+    }
     // Admin convida user
     public function invite(User $user, Room $room): bool
     {
-        return $user->isAdmin() && $room->created_by === $user->id;
+        return $room->isAdmin($user);
+    }
+    public function show(Room $room)
+    {
+        abort_unless($room->users->contains(auth()->id()), 403);
+
+        $users = User::where('id', '!=', auth()->id())->get();
+
+        return view('rooms.show', compact('room', 'users'));
     }
 
 }
