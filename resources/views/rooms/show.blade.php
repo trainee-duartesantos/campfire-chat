@@ -1,64 +1,55 @@
-<x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl">{{ $room->name }}</h2>
-            <a href="{{ route('rooms.index') }}" class="text-sm underline">
-                ← Voltar
-            </a>
-        </div>
-    </x-slot>
+@extends('chat.layout')
 
-    <div class="max-w-4xl mx-auto py-8">
-        <div class="border rounded-lg p-6">
-            <div class="text-gray-600 text-sm mb-2">Membros</div>
+@section('content')
+<div class="flex flex-col h-full">
 
-            <div class="flex flex-wrap gap-2">
-                @foreach($room->users as $user)
-                    <span class="px-3 py-1 rounded-full bg-gray-100 text-sm">
-                        {{ $user->name }}
+    {{-- Header da sala --}}
+    <div class="border-b bg-white px-6 py-4">
+        <h2 class="text-lg font-semibold">
+            # {{ $room->name }}
+        </h2>
+        <p class="text-xs text-gray-500">
+            {{ $room->users->count() }} membros
+        </p>
+    </div>
+
+    {{-- Mensagens --}}
+    <div class="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
+        @forelse($room->messages as $message)
+            <div>
+                <div class="text-sm">
+                    <span class="font-semibold">{{ $message->user->name }}</span>
+                    <span class="text-xs text-gray-400 ml-2">
+                        {{ $message->created_at->format('H:i') }}
                     </span>
-                @endforeach
-            </div>
-
-            <div class="border rounded-lg p-4 h-96 overflow-y-auto space-y-4">
-                @forelse($room->messages as $message)
-                    <div>
-                        <span class="font-semibold">{{ $message->user->name }}</span>
-                        <span class="text-gray-500 text-xs">
-                            {{ $message->created_at->format('H:i') }}
-                        </span>
-                        <p class="text-gray-800">{{ $message->content }}</p>
-                    </div>
-                @empty
-                    <p class="text-gray-500">Ainda não há mensagens nesta sala.</p>
-                @endforelse
-            </div>
-
-            <form method="POST" action="{{ route('rooms.messages.store', $room) }}" class="mt-4">
-                @csrf
-
-                <div class="flex gap-2">
-                    <input
-                        type="text"
-                        name="content"
-                        placeholder="Escreve uma mensagem..."
-                        class="flex-1 border rounded px-3 py-2"
-                        required
-                    />
-
-                    <button class="bg-black text-white px-4 py-2 rounded">
-                        Enviar
-                    </button>
                 </div>
 
-                @error('content')
-                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                @enderror
-            </form>
-
-            <div class="mt-6 text-gray-500">
-                (Mensagens entram a seguir 👀)
+                <div class="text-gray-800 text-sm">
+                    {{ $message->content }}
+                </div>
             </div>
-        </div>
+        @empty
+            <p class="text-sm text-gray-400">
+                Ainda não há mensagens nesta sala.
+            </p>
+        @endforelse
     </div>
-</x-app-layout>
+
+    {{-- Input --}}
+    <form method="POST"
+          action="{{ route('rooms.messages.store', $room) }}"
+          class="border-t bg-white px-6 py-4">
+        @csrf
+
+        <input
+            type="text"
+            name="content"
+            placeholder="Escrever mensagem…"
+            class="w-full border rounded px-4 py-2 text-sm focus:outline-none focus:ring"
+            required
+            autofocus
+        />
+    </form>
+
+</div>
+@endsection

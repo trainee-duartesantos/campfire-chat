@@ -10,8 +10,8 @@ return new class extends Migration {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('sender_id')
-                ->constrained('users')
+            $table->foreignId('user_id')
+                ->constrained()
                 ->cascadeOnDelete();
 
             // Já cria messageable_id + messageable_type + index

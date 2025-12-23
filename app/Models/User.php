@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Models\Room;
-
+use App\Models\Message;
 class User extends Authenticatable
 {
     use HasApiTokens;
@@ -33,6 +33,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'status',
+        'avatar',
     ];
 
     /**
@@ -76,18 +79,17 @@ class User extends Authenticatable
                     ->withTimestamps();
     }
 
-    // Um utilizador envia mensagens
-    public function messages(): HasMany
-    {
-        return $this->hasMany(Message::class);
-    }
+    // Mensagens ENVIADAS
+    public function sentMessages()
+        {
+            return $this->hasMany(Message::class);
+        }
 
-    // Um utilizador recebe mensagens
-    public function directMessages(): MorphMany
-    {
-        return $this->morphMany(Message::class, 'messageable')
-                    ->latest();
-    }
+        // Mensagens RECEBIDAS (diretas)
+        public function receivedMessages()
+        {
+            return $this->morphMany(Message::class, 'messageable');
+        }
 
     // Permissões
     public function isAdmin(): bool

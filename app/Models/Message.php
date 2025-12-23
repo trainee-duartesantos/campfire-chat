@@ -10,21 +10,17 @@ class Message extends Model
 {
     protected $fillable = [
         'user_id',
-        'body',
+        'content',
+        'messageable_id',
+        'messageable_type',
     ];
 
-    /**
-     * Autor da mensagem
-     */
-    public function messages()
+    public function user()
     {
-        return $this->morphMany(Message::class, 'messageable')->latest();
+        return $this->belongsTo(User::class);
     }
 
-    /**
-     * Destino da mensagem (Room ou User)
-     */
-    public function messageable(): MorphTo
+    public function messageable()
     {
         return $this->morphTo();
     }
