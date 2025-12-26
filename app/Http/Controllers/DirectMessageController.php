@@ -47,4 +47,21 @@ class DirectMessageController extends Controller
 
         return redirect()->route('messages.direct.show', $user);
     }
+
+    public function send(Request $request, Conversation $conversation)
+    {
+        $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        $message = $conversation->messages()->create([
+            'user_id' => auth()->id(),
+            'content' => $request->content,
+        ]);
+
+        broadcast(new DirectMessageSent($message))->toOthers();
+
+        return response()->json($message);
+    }
+
 }

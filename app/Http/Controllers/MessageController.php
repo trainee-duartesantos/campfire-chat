@@ -6,6 +6,7 @@ use App\Models\Room;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Events\MessageSent;
 
 class MessageController extends Controller
 {
@@ -20,13 +21,15 @@ class MessageController extends Controller
             abort(403);
         }
 
-        Message::create([
+        $message = Message::create([
             'user_id'          => Auth::id(),
             'content'          => $request->content,
             'messageable_id'   => $room->id,
             'messageable_type' => Room::class,
         ]);
 
+        event(new MessageSent($message));
+        
         return redirect()->route('rooms.show', $room);
     }
 }

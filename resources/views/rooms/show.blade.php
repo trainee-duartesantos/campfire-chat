@@ -136,6 +136,13 @@
 
     </div>
 
+    {{-- INDICADOR "A ESCREVER" --}}
+    <div
+        id="typing-indicator"
+        class="text-xs text-gray-400 px-6 pb-2 hidden">
+    </div>
+
+
     {{-- INPUT --}}
     <form method="POST"
           action="{{ route('rooms.messages.store', $room) }}"
@@ -143,6 +150,7 @@
         @csrf
 
         <input
+            id="message-input"
             type="text"
             name="content"
             placeholder="Escrever mensagem…"
@@ -154,3 +162,36 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    const conversationId = {{ $room->id }};
+    const currentUserId = {{ auth()->id() }};
+
+    // ouvir typing via Echo
+    window.listenTyping(conversationId, currentUserId);
+
+    const input = document.getElementById('message-input');
+    let typingTimer = null;
+
+    input.addEventListener('input', () => {
+        clearTimeout(typingTimer);
+
+        fetch('/typing', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document
+                    .querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                conversation_id: conversationId
+            })
+        });
+
+        typingTimer = setTimeout(() => {
+            // apenas debounce
+        }, 1500);
+    });
+</script>
+@endpush

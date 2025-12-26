@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\DirectMessageController;
+use App\Events\UserTyping;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('welcome');
@@ -44,3 +46,12 @@ Route::post('/rooms/{room}/messages', [MessageController::class, 'store'])
 
 Route::post('/rooms/{room}/invite', [RoomController::class, 'invite'])
     ->name('rooms.invite');
+
+Route::post('/typing', function (Request $request) {
+    broadcast(new UserTyping(
+        $request->conversation_id,
+        $request->user()
+    ));
+
+    return response()->noContent();
+})->middleware('auth');
