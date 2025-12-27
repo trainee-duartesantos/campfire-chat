@@ -57,7 +57,19 @@ class User extends Authenticatable
      */
     protected $appends = [
         'profile_photo_url',
+        'avatar_url',
     ];
+
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar) {
+            return asset('storage/avatars/' . $this->avatar);
+        }
+
+        return 'https://ui-avatars.com/api/?name='
+            . urlencode($this->name)
+            . '&background=E5E7EB&color=374151';
+    }
 
     /**
      * Get the attributes that should be cast.

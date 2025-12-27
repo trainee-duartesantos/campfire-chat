@@ -111,5 +111,36 @@ class RoomController extends Controller
             ->with('success', 'Sala removida.');
     }
 
+    public function search(Room $room, Request $request)
+    {
+        $this->authorize('view', $room);
+
+        $query = $request->get('q');
+
+        if (!$query) {
+            return response()->json([]);
+        }
+
+        $messages = $room->messages()
+            ->with('user')
+            ->where('content', 'LIKE', "%{$query}%")
+            ->orderBy('created_at')
+            ->get()
+            ->map(function ($message) {
+                return [
+                    'id' => $message->id,
+                    'content' => $message->content,
+                    'created_at' => $message->created_at,
+                    'user' => [
+                        'id' => $message->user->id,
+                        'name' => $message->user->name,
+                        'avatar_url' => $message->user->avatar_url,
+                    ],
+                ];
+            });
+
+        return response()->json($messages);
+    }
+
 
 }

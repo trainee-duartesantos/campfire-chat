@@ -40,6 +40,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])
         ->name('rooms.destroy');
+
+    Route::get('/rooms/{room}/search', [RoomController::class, 'search'])
+    ->name('rooms.search');
 });
 
 Route::post('/rooms/{room}/messages', [MessageController::class, 'store'])

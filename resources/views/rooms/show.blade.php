@@ -112,22 +112,44 @@
 
     {{-- MENSAGENS --}}
     <div id="messages"
-        class="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
+        class="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-white">
 
+        @php $lastUserId = null; @endphp
 
         @forelse($room->messages->reverse() as $message)
-            <div>
-                <div class="text-sm">
-                    <span class="font-semibold">
-                        {{ $message->user->name }}
-                    </span>
-                    <span class="text-xs text-gray-400 ml-2">
-                        {{ $message->created_at->format('H:i') }}
-                    </span>
+            @php
+                $isNewGroup = $lastUserId !== $message->user_id;
+                $lastUserId = $message->user_id;
+            @endphp
+
+            <div class="flex items-start gap-3">
+                {{-- Avatar --}}
+                <div class="w-8">
+                    @if($isNewGroup)
+                        <img
+                            src="{{ $message->user->avatar_url }}"
+                            alt="{{ $message->user->name }}"
+                            class="w-8 h-8 rounded-full object-cover mt-1"
+                        />
+                    @endif
                 </div>
 
-                <div class="text-sm text-gray-800">
-                    {{ $message->content }}
+                {{-- Conteúdo --}}
+                <div class="flex-1">
+                    @if($isNewGroup)
+                        <div class="text-sm">
+                            <span class="font-semibold">
+                                {{ $message->user->name }}
+                            </span>
+                            <span class="text-xs text-gray-400 ml-2">
+                                {{ $message->created_at->format('H:i') }}
+                            </span>
+                        </div>
+                    @endif
+
+                    <div class="text-sm text-gray-800">
+                        {{ $message->content }}
+                    </div>
                 </div>
             </div>
         @empty
@@ -150,16 +172,48 @@
         id="message-form"
         method="POST"
         action="{{ route('rooms.messages.store', $room) }}"
+        class="border-t bg-white px-4 py-3"
     >
         @csrf
-        <input
-            id="message-input"
-            type="text"
-            placeholder="Escrever mensagem…"
-            class="w-full border rounded px-4 py-2 text-sm"
-            required
-            autofocus
-        />
+
+        <div class="flex items-center gap-3">
+
+            {{-- AVATAR --}}
+            <img
+                src="{{ auth()->user()->avatar_url }}"
+                alt="{{ auth()->user()->name }}"
+                class="w-8 h-8 rounded-full object-cover"
+            />
+
+            {{-- SEARCH ICON (inativo) --}}
+            <button
+                type="button"
+                class="text-gray-400 hover:text-gray-600 cursor-default"
+                title="Pesquisar (em breve)"
+            >
+                🔍
+            </button>
+
+            {{-- INPUT --}}
+            <input
+                id="message-input"
+                type="text"
+                placeholder="Escrever mensagem…"
+                class="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-gray-200"
+                required
+                autofocus
+            />
+
+            {{-- ATTACH ICON (inativo) --}}
+            <button
+                type="button"
+                class="text-gray-400 hover:text-gray-600 cursor-default"
+                title="Anexar ficheiro (em breve)"
+            >
+                📎
+            </button>
+
+        </div>
     </form>
 </div>
 @endsection
@@ -167,6 +221,9 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    let lastRenderedUserId = null;
+    let lastRenderedAt = null;
+
     const roomId = {{ $room->id }};
     const currentUserId = {{ auth()->id() }};
     const currentUserName = @json(auth()->user()->name);
@@ -176,31 +233,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.listenRoomTyping(roomId, currentUserId);
 
+    function minutesDiff(a, b) {
+        return Math.abs((a - b) / 1000 / 60);
+    }
+
+
     function appendMessage(message) {
+        const messageTime = new Date(message.created_at);
+        const isNewGroup =
+            lastRenderedUserId !== message.user.id ||
+            !lastRenderedAt ||
+            minutesDiff(messageTime, lastRenderedAt) >= 5;
+
+        lastRenderedUserId = message.user.id;
+
         const wrapper = document.createElement('div');
+        wrapper.classList.add('flex', 'items-start', 'gap-3');
 
         wrapper.innerHTML = `
-            <div class="text-sm">
-                <span class="font-semibold">${message.user.name}</span>
-                <span class="text-xs text-gray-400 ml-2">
-                    ${new Date(message.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}
-                </span>
+            <div class="w-8">
+                ${
+                    isNewGroup
+                        ? `<img src="${message.user.avatar_url}"
+                                class="w-8 h-8 rounded-full object-cover mt-1" />`
+                        : ''
+                }
             </div>
-            <div class="text-sm text-gray-800">
-                ${message.content}
+
+            <div class="flex-1">
+                ${
+                    isNewGroup
+                        ? `<div class="text-sm">
+                            <span class="font-semibold">${message.user.name}</span>
+                            <span class="text-xs text-gray-400 ml-2">
+                                ${new Date(message.created_at).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}
+                            </span>
+                        </div>`
+                        : ''
+                }
+
+                <div class="text-sm text-gray-800">
+                    ${message.content}
+                </div>
             </div>
         `;
 
         messages.appendChild(wrapper);
         messages.scrollTop = messages.scrollHeight;
+
+        lastRenderedUserId = message.user.id;
+        lastRenderedAt = messageTime;
     }
 
     // 👂 OUVIR EVENTOS EM TEMPO REAL (OUTROS USERS)
     window.Echo.private(`room.${roomId}`)
         .listen('.room.message.sent', (e) => {
+            if (e.message.user.id === currentUserId) return;
             appendMessage(e.message);
         });
 
@@ -228,21 +319,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         input.value = '';
     });
-});
+    
+    let lastTyped = 0;
 
-let lastTyped = 0;
+    input.addEventListener("input", () => {
+        const now = Date.now();
+        if (now - lastTyped < 600) return;
+        lastTyped = now;
 
-input.addEventListener("input", () => {
-    const now = Date.now();
-    if (now - lastTyped < 600) return;
-    lastTyped = now;
-
-    window.Echo.private(`room.${roomId}`).whisper("typing", {
-        user_id: currentUserId,
-        name: currentUserName,
+        window.Echo.private(`room.${roomId}`).whisper("typing", {
+            user_id: currentUserId,
+            name: currentUserName,
+        });
     });
 });
-
 </script>
 
 @endpush
