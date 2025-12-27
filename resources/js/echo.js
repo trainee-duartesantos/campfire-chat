@@ -13,8 +13,11 @@ window.Echo = new Echo({
     enabledTransports: ["ws", "wss"],
 });
 
+/**
+ * Typing indicator (whisper)
+ */
 window.listenRoomTyping = function (roomId, currentUserId) {
-    let hideTimer = null;
+    let timeout = null;
 
     window.Echo.private(`room.${roomId}`).listenForWhisper("typing", (e) => {
         if (e.user_id === currentUserId) return;
@@ -25,8 +28,8 @@ window.listenRoomTyping = function (roomId, currentUserId) {
         indicator.textContent = `✍️ ${e.name} está a escrever…`;
         indicator.classList.remove("hidden");
 
-        clearTimeout(hideTimer);
-        hideTimer = setTimeout(() => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
             indicator.classList.add("hidden");
         }, 2000);
     });

@@ -168,10 +168,13 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const roomId = {{ $room->id }};
-
+    const currentUserId = {{ auth()->id() }};
+    const currentUserName = @json(auth()->user()->name);
     const messages = document.getElementById('messages');
     const form = document.getElementById('message-form');
     const input = document.getElementById('message-input');
+
+    window.listenRoomTyping(roomId, currentUserId);
 
     function appendMessage(message) {
         const wrapper = document.createElement('div');
@@ -226,6 +229,20 @@ document.addEventListener('DOMContentLoaded', () => {
         input.value = '';
     });
 });
+
+let lastTyped = 0;
+
+input.addEventListener("input", () => {
+    const now = Date.now();
+    if (now - lastTyped < 600) return;
+    lastTyped = now;
+
+    window.Echo.private(`room.${roomId}`).whisper("typing", {
+        user_id: currentUserId,
+        name: currentUserName,
+    });
+});
+
 </script>
 
 @endpush
