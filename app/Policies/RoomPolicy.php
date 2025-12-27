@@ -21,8 +21,11 @@ class RoomPolicy
      */
     public function view(User $user, Room $room): bool
     {
-        return false;
+        return $room->users->contains($user)
+            || $room->created_by === $user->id
+            || $user->isAdmin();
     }
+
 
     /**
      * Determine whether the user can create models.

@@ -37,6 +37,6 @@ class Room extends Model
     //Mensagens da sala
     public function messages()
     {
-        return $this->morphMany(Message::class, 'messageable')->latest();
+        return $this->morphMany(Message::class, 'messageable');
     }
 }

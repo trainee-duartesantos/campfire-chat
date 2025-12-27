@@ -181,38 +181,47 @@
             {{-- AVATAR --}}
             <img
                 src="{{ auth()->user()->avatar_url }}"
-                alt="{{ auth()->user()->name }}"
-                class="w-8 h-8 rounded-full object-cover"
+                class="w-8 h-8 rounded-full"
             />
 
-            {{-- SEARCH ICON (inativo) --}}
+            {{-- SEARCH ICON --}}
             <button
                 type="button"
-                class="text-gray-400 hover:text-gray-600 cursor-default"
-                title="Pesquisar (em breve)"
+                id="open-search"
+                class="text-gray-400 hover:text-gray-600"
+                title="Pesquisar"
             >
                 🔍
             </button>
 
-            {{-- INPUT --}}
+            {{-- MESSAGE INPUT --}}
             <input
                 id="message-input"
                 type="text"
                 placeholder="Escrever mensagem…"
-                class="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring focus:ring-gray-200"
-                required
-                autofocus
+                class="flex-1 border rounded-full px-4 py-2 text-sm"
             />
 
-            {{-- ATTACH ICON (inativo) --}}
+            {{-- SEARCH INPUT (hidden) --}}
+            <input
+                id="search-input"
+                type="text"
+                placeholder="Pesquisar nesta sala…"
+                class="flex-1 border rounded-full px-4 py-2 text-sm hidden"
+            />
+
+            {{-- CLOSE SEARCH --}}
             <button
                 type="button"
-                class="text-gray-400 hover:text-gray-600 cursor-default"
-                title="Anexar ficheiro (em breve)"
+                id="close-search"
+                class="text-gray-400 hidden"
+                title="Fechar pesquisa"
             >
-                📎
+                ❌
             </button>
 
+            {{-- ATTACH --}}
+            <button type="button" class="text-gray-400 cursor-default">📎</button>
         </div>
     </form>
 </div>
@@ -332,6 +341,61 @@ document.addEventListener('DOMContentLoaded', () => {
             name: currentUserName,
         });
     });
+
+    const searchInput = document.getElementById('search-input');
+    const messageInput = document.getElementById('message-input');
+    const openSearch = document.getElementById('open-search');
+    const closeSearch = document.getElementById('close-search');
+
+    let originalMessagesHTML = messages.innerHTML;
+
+    // 🔍 abrir pesquisa
+    openSearch.addEventListener('click', () => {
+        originalMessagesHTML = messages.innerHTML;
+
+        messageInput.classList.add('hidden');
+        searchInput.classList.remove('hidden');
+        closeSearch.classList.remove('hidden');
+
+        searchInput.focus();
+    });
+
+    // ❌ fechar pesquisa
+    closeSearch.addEventListener('click', () => {
+        searchInput.value = '';
+        searchInput.classList.add('hidden');
+        closeSearch.classList.add('hidden');
+        messageInput.classList.remove('hidden');
+
+        messages.innerHTML = originalMessagesHTML;
+    });
+
+    // ⌨️ pesquisar em tempo real
+    searchInput.addEventListener('input', async () => {
+        const q = searchInput.value.trim();
+
+        if (!q) {
+            messages.innerHTML = originalMessagesHTML;
+            return;
+        }
+
+        const res = await fetch(`/rooms/${roomId}/search?q=${encodeURIComponent(q)}`);
+        const results = await res.json();
+
+        messages.innerHTML = '';
+        lastRenderedUserId = null;
+        lastRenderedAt = null;
+
+        results.forEach(appendMessage);
+    });
+
+    // ESC fecha pesquisa (Campfire feel 😄)
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeSearch.click();
+        }
+    });
+
 });
 </script>
 

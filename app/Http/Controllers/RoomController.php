@@ -141,6 +141,4 @@ class RoomController extends Controller
 
         return response()->json($messages);
     }
-
-
 }
