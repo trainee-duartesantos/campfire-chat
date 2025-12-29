@@ -128,7 +128,13 @@
         </ul>
     </div>
 
-    
+    <div
+        id="new-messages-badge"
+        class="hidden cursor-pointer text-xs bg-yellow-200 text-gray-800 px-3 py-1 rounded-full mx-auto mb-2 w-fit shadow"
+    >
+        Novas mensagens
+    </div>
+
 
     {{-- MENSAGENS --}}
     <div id="messages"
@@ -260,11 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let searchResults = [];
     let currentResultIndex = -1;
     let lastRenderedDate = null;
-
-
-    const roomId = {{ $room->id }};
-    const currentUserId = {{ auth()->id() }};
-    const currentUserName = @json(auth()->user()->name);
+    let isAtBottom = true;
+    let unreadCount = 0;
 
     const messages = document.getElementById('messages');
     const form = document.getElementById('message-form');
@@ -274,6 +277,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const openSearch = document.getElementById('open-search');
     const closeSearch = document.getElementById('close-search');
     const searchCounter = document.getElementById('search-counter');
+
+    messages.addEventListener('scroll', () => {
+        const threshold = 40; // tolerância px
+        const position = messages.scrollTop + messages.clientHeight;
+        const height = messages.scrollHeight;
+
+        isAtBottom = height - position < threshold;
+
+        if (isAtBottom) {
+            hideNewMessagesBadge();
+            unreadCount = 0;
+        }
+    });
+
+
+    const roomId = {{ $room->id }};
+    const currentUserId = {{ auth()->id() }};
+    const currentUserName = @json(auth()->user()->name);
 
     window.listenRoomTyping(roomId, currentUserId);
 
@@ -384,7 +405,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         messages.appendChild(wrapper);
-        messages.scrollTop = messages.scrollHeight;
+        if (isAtBottom) {
+            messages.scrollTop = messages.scrollHeight;
+        } else {
+            showNewMessagesBadge();
+        }
 
         lastRenderedUserId = message.user.id;
         lastRenderedAt = messageTime;
@@ -446,6 +471,11 @@ document.addEventListener('DOMContentLoaded', () => {
     openSearch.addEventListener('click', () => {
         isSearchMode = true;
 
+        isAtBottom = true;
+        hideNewMessagesBadge();
+        unreadCount = 0;
+
+
         originalMessagesHTML = messages.innerHTML;
 
         messageInput.classList.add('hidden');
@@ -459,6 +489,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ❌ fechar pesquisa
     closeSearch.addEventListener('click', () => {
         isSearchMode = false;
+        isAtBottom = true;
+        hideNewMessagesBadge();
+        unreadCount = 0;
+
         currentSearchTerm = '';
 
         searchInput.value = '';
@@ -475,6 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lastRenderedUserId = null;
         lastRenderedAt = null;
         lastRenderedDate = null;
+        messages.scrollTop = messages.scrollHeight;
 
         messageInput.focus();
     });
@@ -538,6 +573,21 @@ document.addEventListener('DOMContentLoaded', () => {
         searchCounter.classList.remove('hidden');
     }
 
+    const newMessagesBadge = document.getElementById('new-messages-badge');
+
+    function showNewMessagesBadge() {
+        unreadCount++;
+        newMessagesBadge.textContent =
+            unreadCount === 1
+                ? 'Nova mensagem'
+                : `${unreadCount} novas mensagens`;
+
+        newMessagesBadge.classList.remove('hidden');
+    }
+
+    function hideNewMessagesBadge() {
+        newMessagesBadge.classList.add('hidden');
+    }
 
 
     // ESC fecha pesquisa (Campfire feel 😄)
@@ -561,6 +611,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateActiveResult();
         updateCounter();
+    });
+
+    newMessagesBadge.addEventListener('click', () => {
+        messages.scrollTo({
+            top: messages.scrollHeight,
+            behavior: 'smooth'
+        });
+
+        hideNewMessagesBadge();
+        unreadCount = 0;
     });
 
 
