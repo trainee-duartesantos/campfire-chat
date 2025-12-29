@@ -4,6 +4,13 @@
         background-color: #facc15; /* amarelo mais forte */
         outline: 2px solid #f59e0b;
     }
+    .day-separator {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        text-transform: capitalize;
+        margin: 1.5rem 0;
+    }
+
 </style>
 
 @section('content')
@@ -252,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let isSearchMode = false;
     let searchResults = [];
     let currentResultIndex = -1;
+    let lastRenderedDate = null;
 
 
     const roomId = {{ $room->id }};
@@ -286,12 +294,58 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
+    function formatDayLabel(date) {
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+
+        const d = new Date(date);
+
+        if (d.toDateString() === today.toDateString()) {
+            return 'Hoje';
+        }
+
+        if (d.toDateString() === yesterday.toDateString()) {
+            return 'Ontem';
+        }
+
+        return d.toLocaleDateString('pt-PT', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    function isNewDay(date) {
+        if (!lastRenderedDate) return true;
+
+        const d1 = new Date(date).toDateString();
+        const d2 = new Date(lastRenderedDate).toDateString();
+
+        return d1 !== d2;
+    }
+
+    function appendDaySeparator(label) {
+        const sep = document.createElement('div');
+        sep.className = 'day-separator text-center';
+        sep.textContent = label;
+        messages.appendChild(sep);
+    }
+
+
     function appendMessage(message) {
         const messageTime = new Date(message.created_at);
+        // 📅 Separador de dia
+        if (isNewDay(messageTime)) {
+            appendDaySeparator(formatDayLabel(messageTime));
+            lastRenderedDate = messageTime;
+        }
         const isNewGroup =
             lastRenderedUserId !== message.user.id ||
             !lastRenderedAt ||
             minutesDiff(messageTime, lastRenderedAt) >= 5;
+            
 
         lastRenderedUserId = message.user.id;
 
@@ -418,6 +472,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         messages.innerHTML = originalMessagesHTML;
+        lastRenderedUserId = null;
+        lastRenderedAt = null;
+        lastRenderedDate = null;
+
         messageInput.focus();
     });
 
@@ -439,6 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         messages.innerHTML = '';
         lastRenderedUserId = null;
         lastRenderedAt = null;
+        lastRenderedDate = null;
 
         results.forEach(appendMessage);
 
