@@ -14,6 +14,6 @@ Broadcast::channel('room.{roomId}', function ($user, $roomId) {
         ->exists();
 });
 
-Broadcast::channel('dm.{conversationId}', function ($user, $conversationId) {
-    return true;
+Broadcast::channel('direct.{userId}', function ($user, $userId) {
+    return $user->id === (int) $userId;
 });

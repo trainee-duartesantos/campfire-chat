@@ -51,7 +51,7 @@
 
 @push('scripts')
 <script>
-    const conversationId = {{ $conversation->id }};
+    const conversationId = {{ $user->id }};
     const currentUserId = {{ auth()->id() }};
     const currentUserName = @json(auth()->user()->name);
 

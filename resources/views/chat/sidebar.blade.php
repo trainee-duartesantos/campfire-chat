@@ -1,4 +1,4 @@
-<div class="h-full flex flex-col">
+<div class="h-full flex flex-col overflow-y-auto">
 
     {{-- UTILIZADOR --}}
     <div class="px-4 py-4 border-b flex items-center gap-3">
@@ -91,7 +91,7 @@
     </div>
 
     {{-- MENSAGENS DIRETAS --}}
-    <div class="px-4 py-3 border-t mt-auto">
+    <div class="px-4 py-3 border-t">
         <span class="text-xs font-semibold text-gray-500 uppercase block mb-2">
             Mensagens diretas
         </span>

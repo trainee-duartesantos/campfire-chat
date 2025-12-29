@@ -14,22 +14,23 @@ class DirectMessageController extends Controller
         // Não permitir falar consigo próprio
         abort_if($user->id === Auth::id(), 403);
 
-        // Buscar conversa (enviei OU recebi)
-        $messages = Message::with('user')
-            ->where(function ($q) use ($user) {
-                $q->where('user_id', Auth::id())
-                  ->where('messageable_id', $user->id)
-                  ->where('messageable_type', User::class);
-            })
-            ->orWhere(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->where('messageable_id', Auth::id())
-                  ->where('messageable_type', User::class);
-            })
-            ->orderBy('created_at')
-            ->get();
+        $messages = Message::where(function ($q) use ($user) {
+            $q->where('user_id', auth()->id())
+            ->where('messageable_id', $user->id)
+            ->where('messageable_type', User::class);
+        })
+        ->orWhere(function ($q) use ($user) {
+            $q->where('user_id', $user->id)
+            ->where('messageable_id', auth()->id())
+            ->where('messageable_type', User::class);
+        })
+        ->orderBy('created_at')
+        ->get();
 
-        return view('messages.direct', compact('user', 'messages'));
+        return view('messages.direct', [
+            'user' => $user,          // 👈 interlocutor
+            'messages' => $messages,
+        ]);
     }
 
     public function store(Request $request, User $user)
